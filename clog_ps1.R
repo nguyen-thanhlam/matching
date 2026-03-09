@@ -66,7 +66,11 @@ for (algo in algo_list) {
         
         for (z in 1:nsim) {
           set.seed(z)
-          cat("propensity score, approach ",algo,", iter ",z," \r")
+          cat("propensity score, approach ",algo, nc, " covariates ",
+              ", event.prop ",ifelse(scale==26.3,0.01,ifelse(scale==55.2,0.05,0.10)),
+              ", ttm.prop ", ttm,
+              ", iter ",z,"/",nsim,
+              " \r")
           flush.console()
           
           # Population 2*1e4 when event prob == 1%, else 1e4
@@ -76,8 +80,8 @@ for (algo in algo_list) {
                      px.str = px.str, ttm.prop = ttm.prop, 
                      scale.cens = scale.cens, n.cova = n.cova)
           
-          print(mean(data$ttm))
-          print(mean(data$stt))
+          #print(mean(data$ttm))
+          #print(mean(data$stt))
           
           #-----------------------
           # No countermatching (noc)
@@ -201,7 +205,7 @@ for (algo in algo_list) {
           approach  = "ps",
           n         = n,
           n.cova    = nc,
-          event.prob = scale,
+          event.prob = ifelse(scale==26.3,1,ifelse(scale==55.2,5,10)),
           ttm.prob  = ttm,
           mh_pval   = pvalue.match,
           clog_coef = clog_coef,
