@@ -19,9 +19,8 @@ pair.cm = c()
 cm.fail = c()
 
 # Simulation parameters
-nsim = 1
+nsim = 100
 n.pair = 200
-n = 20000
 px.str = 3
 hr.ttm = 1
 
@@ -33,7 +32,6 @@ scale.cens.list = c(26.3, 55.2, 79.6)
 
 # Nb of cova
 n.cova.list = c(4, 10, 20)
-n.hx = n
 conv = 0
 
 # List of algorithms
@@ -43,14 +41,14 @@ algo_list = c('A1', 'A2')
 # Combine all results
 # -------------------
 names <- c("clog_mhl1", "clog_ps1", "clog_drs1")
-directory <- "C:/R/matchsim1/Code/matching/"
+#directory <- "C:/R/matchsim1/Code/matching/"
 
 d <- lapply(names, function(x) {
-  source(paste0(directory, x, ".r"), local = TRUE)
+  source(paste0(x, ".r"), local = TRUE)
   return(res) 
 })
 
 names(d) <- names
 res_match <- do.call(rbind, d)
 
-#write.csv(res_match, "Result/match_res1.csv")
+write.csv(res_match, "match_res1.csv")

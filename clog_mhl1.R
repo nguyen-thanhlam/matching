@@ -67,7 +67,11 @@ for (algo in algo_list) {
     
     for (z in 1:nsim) {
       set.seed(z)
-      cat("mahalanobis distance, approach ",algo,", iter ",z," \r")
+      cat("mahalanobis distance, approach ", algo, nc, " covariates ",
+          ", event.prop ", ifelse(scale==26.3,0.01,ifelse(scale==55.2,0.05,0.10)),
+          ", ttm.prop ", ttm,
+          ", iter ",z,"/",nsim,
+          " \r")
       flush.console()
       
       n = ifelse(scale.cens == 26.3, 20000, 10000)
@@ -78,8 +82,8 @@ for (algo in algo_list) {
                  ttm.prop = ttm.prop, 
                  scale.cens=scale.cens,
                  n.cova = n.cova)
-      print(mean(data$ttm))
-      print(mean(data$stt))
+      #print(mean(data$ttm))
+      #print(mean(data$stt))
       # -------------------------
       # No counter-matching (noc)
       # ------------------------- 
@@ -183,7 +187,7 @@ for (algo in algo_list) {
       approach  = "mhl",
       n         = n,
       n.cova    = nc,
-      event.prob = scale,
+      event.prob = ifelse(scale==26.3,1,ifelse(scale==55.2,5,10)),
       ttm.prob  = ttm,
       mh_pval   = pvalue.match,
       clog_coef = clog_coef,
