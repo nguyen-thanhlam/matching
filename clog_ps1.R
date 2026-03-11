@@ -5,51 +5,15 @@ library("DiPs")
 library("survival")
 library("SensitivityCaseControl")
 
-#--------------------
-# Simulation function
-#--------------------
 
-sim <- function(n = 10000, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5, 
-                px.str = 3, scale.cens = 100, ttm.prop = 0.1, n.cova = 20) {
-  
-  px <- rbinom(n, 1, 0.5)
-  
-  cova <- matrix(0, ncol = n.cova, nrow = n)
-  name <- NA
-  
-  for (k in 1:n.cova) {
-    cova[, k] <- runif(n, -0.5, 0.5)
-    name <- c(name, paste0("c", k))
-  }
-  colnames(cova) <- name[-1]
-  
-  cova.coef.ttm <- rep(c(-1, +1), length.out = n.cova)
-  cova.lp.ttm <- as.vector(cova %*% cova.coef.ttm)
-  
-  itc.ttm <- qnorm(ttm.prop) * sqrt(1 + n.cova / 12 + px.str^2 * 0.25) - px.str * 0.5
-  lp <- pnorm(itc.ttm + px.str * px + cova.lp.ttm)
-  ttm <- rbinom(n, 1, lp)
-  
-  b0 <- med0 * log(2)^(-1 / a)
-  b.ttm <- log(hr.ttm)  
-  
-  cova.coef.oc <- rep(c(log(hr.c), -log(hr.c)), length.out = n.cova)
-  cova.lp.oc <- as.vector(cova %*% cova.coef.oc)
-  t.event <- rweibull(n = n, shape = a, scale = b0 * exp((-b.ttm * ttm - cova.lp.oc) / a))
-  t.cens <- rweibull(n = n, shape = a, scale = scale.cens)
-  
-  tobs <- pmin(t.event, t.cens)
-  out <- data.frame(px, ttm, cova,
-                    tobs,
-                    stt = as.numeric(tobs == t.event),
-                    id = 1:n)
-  return(out)
-}
-
-for (algo in algo_list) {
-  for (nc in n.cova.list) {
-    for (scale in scale.cens.list) {
-      for (ttm in ttm.prop.list) {
+#-------------------------------------------
+#                 Simulation 
+#-------------------------------------------
+for (strat in strategy) {
+  for (algo in algo_list) {
+    for (nc in n.cova.list) {
+      for (scale in scale.cens.list) {
+        for (ttm in ttm.prop.list) {
         
         pvalue.match = c()
         pvalue.cmatch = c()
@@ -66,8 +30,9 @@ for (algo in algo_list) {
         
         for (z in 1:nsim) {
           set.seed(z)
-          cat("propensity score, approach ",algo, nc, " covariates ",
-              ", event.prop ",ifelse(scale==26.3,0.01,ifelse(scale==55.2,0.05,0.10)),
+          cat("Propensity score ", algo,
+              "strategy " , strat, nc, " covariates ",
+              ", event.prop ", ifelse(scale==26.3,0.01,ifelse(scale==55.2,0.05,0.10)),
               ", ttm.prop ", ttm,
               ", iter ",z,"/",nsim,
               " \r")
@@ -76,12 +41,12 @@ for (algo in algo_list) {
           # Population 2*1e4 when event prob == 1%, else 1e4
           n = ifelse(scale.cens == 26.3, 20000, 10000)
           
-          data = sim(n = n, hr.ttm = hr.ttm, 
-                     px.str = px.str, ttm.prop = ttm.prop, 
-                     scale.cens = scale.cens, n.cova = n.cova)
-          
-          #print(mean(data$ttm))
-          #print(mean(data$stt))
+          data = sim(n = n, 
+                     hr.ttm = hr.ttm, 
+                     px.str = px.str, 
+                     ttm.prop = ttm.prop, 
+                     scale.cens = scale.cens, 
+                     n.cova = n.cova)
           
           #-----------------------
           # No countermatching (noc)
@@ -130,49 +95,56 @@ for (algo in algo_list) {
             } else {
               
               elig = c(i:n)
-              #elig = elig[!(source.noc$id[elig] %in% unique(c(sel[,1], sel[,2])))]
               if (length(elig) == 1) next
               
               d = source.noc[elig, ]
               d$case = c(1, rep(0, nrow(d) - 1))
             }
             
-            X = d[,'ps']
+            X = d[, "ps"]
+            
             distance <- abs(log(rep(X[1],length(X)-1)/(1-rep(X[1],length(X)-1))) 
                             - log(X[2:length(X)]/(1 - X[2:length(X)])))
             
-            dist <- list()
+            dist_list <- list()
+            dist_list$start = rep(1,length(X)-1)
+            dist_list$end = c(2:length(X))
+            dist_list$d = distance
             
-            dist$d = distance
-            dist$start = rep(1,length(X)-1)
-            dist$end = c(2:length(X))
+            if (strat == "matching") {
+              dist_list1 <- dist_list
+            } else {
+              if (var(d$px) == 0) {
+                dist_list1 <- dist_list
+              } else {
+                dist_list1 <- addrevcaliper(dist = dist_list, z = d$case, 
+                                            dx = d$px, rg = c(-0.5, 0.5), 
+                                            stdev = TRUE, penalty = max(dist_list$d))
+              }
+            }
             
-            o1<-match(z = d$case, dist = dist, dat = d, ncontrol=1)
-            ctrl.i.id = ifelse(o1$feasible == T, o1$data$id[2], NA)
-            #print(ctrl.i.id)
-            # Record the selected ctrl
-            sel = do.call(rbind,list(sel,c(source.noc$id[i],ctrl.i.id,j)))
-            j=j+1
+            o1<-match(z = d$case, dist = dist_list1, dat = d, ncontrol=1)
             
+            if (o1$feasible == TRUE && nrow(o1$data) >= 2) {
+              ctrl.i.id = o1$data$id[2]
+              sel = rbind(sel, c(source.noc$id[i], ctrl.i.id, j))
+              j = j + 1
+            }
           }
+          
           
           if (nrow(sel) > 1) {
             selected = as.data.frame(sel[-1, , drop = FALSE]) 
-            colnames(selected) = c('id.case','id.ctrl','pair')
+            colnames(selected) = c('id.case', 'id.ctrl', 'pair')
             
-            test = source.noc
-            test = merge(test,selected[,c('id.case','pair')], by.x=c('id'), by.y=c('id.case'), all.x=TRUE)
-            test = merge(test,selected[,c('id.ctrl','pair')], by.x=c('id'), by.y=c('id.ctrl'), all.x=TRUE)
-            test[is.na(test)] = 0
-            test$pair = test$pair.x + test$pair.y
+            case.noc = merge(source.noc, selected[, c('id.case', 'pair')], by.x='id', by.y='id.case')
+            ctrl.noc = merge(source.noc, selected[, c('id.ctrl', 'pair')], by.x='id', by.y='id.ctrl')
+            ctrl.noc$stt = 0
             
             
-            # drop pair==0; test -> conditional
-            case.noc = test[test$pair.x != 0,]
-            case.noc = case.noc[order(case.noc$pair.x),]
+            case.noc = case.noc[order(case.noc$pair), ]
+            ctrl.noc = ctrl.noc[order(ctrl.noc$pair), ]
             
-            ctrl.noc = test[test$pair.y != 0,]
-            ctrl.noc = ctrl.noc[order(ctrl.noc$pair.y),]
             
             # MH test on the first 200 matched sets
             pvalue.match[z] = 
@@ -182,25 +154,27 @@ for (algo in algo_list) {
                                Gamma = 1)$lower.bound.pval
             
             
-            # Conditional logistic regression
-            clog_dat <- test[test$pair != 0, ]
-            clog_dat <- clog_dat[order(clog_dat$pair), ]
+            # Clogit
+            clog_dat <- rbind(case.noc, ctrl.noc)
+            clog_dat <- clog_dat[order(clog_dat$pair),]
+            
+            print(mean(clog_dat$ttm))
+            print(mean(clog_dat$px))
             
             clog_mod <- clogit(stt ~ ttm + strata(pair), 
                                data = clog_dat, 
                                method = "breslow")
-            
             clog_sum <- summary(clog_mod)
             
             clog_coef[z] <- clog_sum$coefficients[1, 1]
             clog_pval[z] <- clog_sum$coefficients[1, 5]
-            
           }
         }
         
-        tmp <- paste(algo, nc, scale, ttm, sep = ".")
+        tmp <- paste(strat, algo, nc, scale, ttm, sep = ".")
         
         ps_res[[tmp]] <- data.frame(
+          strategy  = strat,
           algo      = algo,
           approach  = "ps",
           n         = n,
@@ -210,10 +184,10 @@ for (algo in algo_list) {
           mh_pval   = pvalue.match,
           clog_coef = clog_coef,
           clog_pval = clog_pval)
-      }  
+        }  
+      }
     }
   }
 }
-
 
 res <- do.call(rbind, ps_res)
