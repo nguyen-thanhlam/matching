@@ -143,33 +143,27 @@ for (strat in strategy) {
               
               
               # MH test on the first 200 matched sets
-              pvalue.match[z] = 
-                sens.analysis.mh(cases.exposed = case.noc$ttm,
-                                 referents.exposed = ctrl.noc$ttm,
-                                 no.referents = 1,
-                                 Gamma = 1)$lower.bound.pval
+              pvalue.match = c(pvalue.match, sens.analysis.mh(cases.exposed = case.noc$ttm,
+                                                              referents.exposed = ctrl.noc$ttm,
+                                                              no.referents = 1, Gamma = 1)$lower.bound.pval)
               
               
               # Clogit
               clog_dat <- rbind(case.noc, ctrl.noc)
               clog_dat <- clog_dat[order(clog_dat$pair),]
               
-              print(mean(clog_dat$ttm))
-              print(mean(clog_dat$px))
-              
               clog_mod <- clogit(stt ~ ttm + strata(pair), 
                                  data = clog_dat, 
                                  method = "breslow")
               clog_sum <- summary(clog_mod)
               
-              clog_coef[z] <- clog_sum$coefficients[1, 1]
-              clog_pval[z] <- clog_sum$coefficients[1, 5]
+              clog_coef <- c(clog_coef, clog_sum$coefficients[1, 1])
+              clog_pval <- c(clog_pval, clog_sum$coefficients[1, 5])
             }
           }
           
-          tmp <- paste(strat, algo, nc, scale, ttm, sep = ".")
-          
-          drs_res[[tmp]] <- data.frame(
+          drs_res <- do.call(rbind, list(drs_res,
+          data.frame(
             strategy  = strat,
             algo      = algo,
             approach  = "drs",
@@ -177,13 +171,12 @@ for (strat in strategy) {
             n.cova    = nc,
             event.prob = ifelse(scale==26.3,1,ifelse(scale==55.2,5,10)),
             ttm.prob  = ttm,
+            seed = c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))),
             mh_pval   = pvalue.match,
             clog_coef = clog_coef,
-            clog_pval = clog_pval)
+            clog_pval = clog_pval)))
         }  
       }
     }
   }
 }
-
-res <- do.call(rbind, drs_res)
