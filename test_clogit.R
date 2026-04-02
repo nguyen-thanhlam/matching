@@ -7,8 +7,8 @@ library("SensitivityCaseControl")
 # Simulation study parameters
 #--------------------
 
-nphase = 3
-nsim = 3
+nphase = 10
+nsim = 100
 n.pair = 200
 n = 20000
 px.str = 3
@@ -181,7 +181,7 @@ for (algo in algo_list) {
                     
                     clog_coef <- c(clog_coef,clog_sum$coefficients[1, 1])
                     clog_pval <- c(clog_pval,clog_sum$coefficients[1, 5])
-                    clog_ci <- rbind(clog_ci,confint(clog_mod))                    
+                    clog_ci <- rbind(clog_ci,confint(clog_mod))
                     # Clogit no match
                     clog_mod_nm <- clogit(as.formula(paste0('stt ~ ttm + ',
                                                     paste(name,collapse = " + "),
@@ -225,7 +225,7 @@ for (algo in algo_list) {
         }
     }
 }
-    res <- do.call(rbind, list(res, rbind(res_ex,res_nm)))
+    res <- rbind(res_ex,res_nm)
     View(res)
     write.csv(res, paste0("match_res_clogtest.csv"))
 }

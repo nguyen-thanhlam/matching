@@ -28,7 +28,7 @@ for (strat in strategy) {
           for (k in 1:n.cova) name = c(name,paste0("c", k))
           name = name[-1]
           
-          for (z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1)))) {
+          for ( z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))) ) {
             set.seed(z)
             cat("Mahalanobis distance ", algo,
                 "strategy " , strat, nc, " covariates ",
@@ -40,11 +40,11 @@ for (strat in strategy) {
             
             n = ifelse(scale.cens == 26.3, 20000, 10000)
             
-            data = sim(n=n, 
-                       hr.ttm=hr.ttm, 
-                       px.str=px.str, 
+            data = sim(n = n, 
+                       hr.ttm = hr.ttm, 
+                       px.str = px.str, 
                        ttm.prop = ttm.prop, 
-                       scale.cens=scale.cens,
+                       scale.cens = scale.cens,
                        n.cova = n.cova)
             #print(mean(data$ttm))
             #print(mean(data$stt))
@@ -174,7 +174,7 @@ for (strat in strategy) {
             mh_pval   = pvalue.match,
             clog_coef = clog_coef,
             clog_pval = clog_pval,
-            log_lower = clog_ci[,1],
+            clog_lower = clog_ci[,1],
             clog_upper = clog_ci[,2])))
         }  
       }

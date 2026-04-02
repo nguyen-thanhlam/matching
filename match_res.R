@@ -17,8 +17,8 @@ pair.cm = c()
 cm.fail = c()
 
 # Simulation parameters
-nphase = 3
-nsim = 1
+nphase = 10
+nsim = 100
 n.pair = 200
 n = 20000
 px.str = 3
@@ -37,7 +37,7 @@ n.hx = n
 conv = 0
 
 # List of algorithms
-algo_list = c('A1', 'A2')
+algo_list = c('A1') #A2
 
 #--------------------
 # Simulation function
@@ -130,7 +130,7 @@ for (iphase in 1:nphase) {
   }
   res <- rbind(mhl_res, ps_res, drs_res)
   View(res)
-  write.csv(res, paste0("match_res.csv"))
+  write.csv(res, paste0("match_resA1.csv"))
 }
 
 #names(res) <- names

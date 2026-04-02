@@ -19,6 +19,7 @@ for (strat in strategy) {
         pvalue.cmatch = c()
         clog_coef = c()
         clog_pval = c()
+        clog_ci = c()
         
         n.cova <- nc
         scale.cens <- scale
@@ -28,7 +29,7 @@ for (strat in strategy) {
         for (k in 1:n.cova) name = c(name,paste0("c", k))
         name = name[-1]
         
-        for (z in 1:nsim) {
+        for ( z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))) ) {
           set.seed(z)
           cat("Propensity score ", algo,
               "strategy " , strat, nc, " covariates ",
@@ -166,6 +167,7 @@ for (strat in strategy) {
             
             clog_coef <- c(clog_coef, clog_sum$coefficients[1, 1])
             clog_pval <- c(clog_pval, clog_sum$coefficients[1, 5])
+            clog_ci <- rbind(clog_ci,confint(clog_mod))  
           }
         }
         
@@ -182,7 +184,9 @@ for (strat in strategy) {
             seed = c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))),
             mh_pval   = pvalue.match,
             clog_coef = clog_coef,
-            clog_pval = clog_pval)))
+            clog_pval = clog_pval,
+            clog_lower = clog_ci[,1],
+            clog_upper = clog_ci[,2])))
         }  
       }
     }
