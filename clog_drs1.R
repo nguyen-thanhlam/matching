@@ -42,7 +42,7 @@ for (strat in strategy) {
             # Population 2*1e4 when event prob == 1%, else 1e4
             n = ifelse(scale.cens == 26.3, 20000, 10000)
             
-            hx = sim(n = n, hr.ttm = 1, 
+            hx = sim(n = n, hr.ttm = hr.ttm, 
                      px.str = px.str, ttm.prop = ttm.prop, 
                      scale.cens = scale.cens, n.cova = n.cova)
             
