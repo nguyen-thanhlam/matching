@@ -154,8 +154,18 @@ func_m_cm = function(d, name, method) {
 return(c(sel_m,sel_cm))}
 safe_clogit <- function(formula, data, method) {
   warn_flag <- FALSE
+  err_flag <- FALSE
+
   fit <- withCallingHandlers(
-    clogit(formula, data = data, method = method),
+    tryCatch(
+      {
+        clogit(formula, data = data, method = method)
+      },
+      error = function(e) {
+        err_flag <<- TRUE
+        return(NULL)
+      }
+    ),
     warning = function(w) {
       warn_flag <<- TRUE
       invokeRestart("muffleWarning")
@@ -164,14 +174,14 @@ safe_clogit <- function(formula, data, method) {
   list(
     model = fit,
     summary = if (!is.null(fit)) summary(fit) else NULL,
-    converge = ifelse(warn_flag, 0, 1)
+    converge = ifelse(warn_flag || err_flag || is.null(fit), 0, 1)
   )
 }
-proc_clogit = function(dat, source, typ, name) {
+proc_clogit = function(dat, source.dat, typ, name) {
     selected = as.data.frame(dat[-1, , drop = FALSE]) 
     colnames(selected) = c('id.case', 'id.ctrl', 'pair')
-    case.noc = merge(source, selected[, c('id.case', 'pair')], by.x='id', by.y='id.case')
-    ctrl.noc = merge(source, selected[, c('id.ctrl', 'pair')], by.x='id', by.y='id.ctrl')
+    case.noc = merge(source.dat, selected[, c('id.case', 'pair')], by.x='id', by.y='id.case')
+    ctrl.noc = merge(source.dat, selected[, c('id.ctrl', 'pair')], by.x='id', by.y='id.ctrl')
     ctrl.noc$stt = 0
     case.noc = case.noc[order(case.noc$pair), ]
     ctrl.noc = ctrl.noc[order(ctrl.noc$pair), ]
@@ -184,10 +194,15 @@ proc_clogit = function(dat, source, typ, name) {
                             data = clog_dat, 
                             method = "breslow")
         clog_sum_score <- clog_mod_score$summary
-        
-        clog_coef_score <- clog_sum_score$coefficients[1, 1]
-        clog_pval_score <- clog_sum_score$coefficients[1, 5]
-        clog_ci_score <- c(confint(clog_mod_score$model)['ttm',])
+        if (!(is.null(clog_sum_score))) {
+            clog_coef_score <- clog_sum_score$coefficients[1, 1]
+            clog_pval_score <- clog_sum_score$coefficients[1, 5]
+            clog_ci_score <- c(confint(clog_mod_score$model)['ttm',])
+        } else {
+            clog_coef_score <- NA
+            clog_pval_score <- NA
+            clog_ci_score <- c(NA, NA)
+        }
         vec_score <- c(clog_coef_score, clog_pval_score, clog_ci_score, clog_mod_score$converge)
     } else (vec_score <- c(NA, NA, NA, NA, 0))
     clog_mod_cova <- safe_clogit(as.formula(paste0('stt ~ ttm + ',
@@ -207,24 +222,17 @@ fin.res = c()
 for (iphase in c(1:nphase)) {
     for (n.pair in n.pair.list) {
         for (algo in algo_list) {
-            for (nc in n.cova.list) {
-                for (scale in scale.cens.list) {
-                    for (ttm in ttm.prop.list) {
-                        n.cova <- nc
-                        scale.cens <- scale
-                        ttm.prop <- ttm
-
+            for (n.cova in n.cova.list) {
+                for (scale.cens in scale.cens.list) {
+                    for (ttm.prop in ttm.prop.list) {
+                        
                         name = NA
                         for (k in 1:n.cova) name = c(name,paste0("c", k))
                         name = name[-1]
                         
                         for (z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1)))) {
                             set.seed(z)
-                            cat("Test", algo, nc, " covariates ",
-                                ", event.prop ", ifelse(scale.cens == 26.3, 20000*n.pair/200, 10000*n.pair/200),
-                                ", ttm.prop ", ttm,
-                                ", iter ",z,"/",nsim,
-                                " \r")
+                            cat("Test", algo, ", iter ",z,"/",nsim," \r")
                             flush.console()
                             
                             n = ifelse(scale.cens == 26.3, 20000*n.pair/200, 10000*n.pair/200)
@@ -306,7 +314,7 @@ for (iphase in c(1:nphase)) {
                                     res = lapply(methods, function(m) proc_clogit(dat = dat[[m]], source = source.noc, typ = m, name = name))
                                     names(res) = methods
                                 } else {
-                                    res = list(proc_clogit(dat = dat, source = source.noc, typ = 'nm', name = name))
+                                    res = list(proc_clogit(dat = dat, source.dat = source.noc, typ = 'nm', name = name))
                                     names(res) = 'nm'
                                 }
                                 return(res)
@@ -314,7 +322,7 @@ for (iphase in c(1:nphase)) {
                             names(res) = c('m','cm','nm')
                             for (mth in c('m','cm','nm')) {
                                 for (typ in names(res[[mth]])) {
-                                    res.vec = c(res[[mth]][[typ]],mth,typ,n.pair,algo,n.cova,ifelse(scale==26.3,1,ifelse(scale==55.2,5,10)),ttm,z)
+                                    res.vec = c(res[[mth]][[typ]],mth,typ,n.pair,algo,n.cova,ifelse(scale.cens==26.3,1,ifelse(scale.cens==55.2,5,10)),ttm.prop,z)
                                     fin.res[[mth]][[typ]] <- do.call(rbind,list(fin.res[[mth]][[typ]], res.vec))
                                     fin.res[[mth]][[typ]] = as.data.frame(fin.res[[mth]][[typ]])
                                     colnames(fin.res[[mth]][[typ]]) = c('coef.sc','pval.sc','lw.sc','up.sc','conv.sc','coef.cv','pval.cv','lw.cv','up.cv','conv.cv','method','type','n.pair','algo','n.cova','event.prob','ttm.prop','seed')
