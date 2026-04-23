@@ -7,7 +7,7 @@ library(dplyr)
 # Simulation study parameters
 #--------------------
 
-nphase = 10
+nphase = c(8:10)
 nsim = 100
 n.pair.list = c(200,500)
 n = 20000
@@ -219,7 +219,7 @@ proc_clogit = function(dat, source.dat, typ, name) {
 return(c(vec_score, vec_cova))}
 methods = c("mhl","ps","drs")
 fin.res = c()
-for (iphase in c(1:nphase)) {
+for (iphase in nphase) {
     for (n.pair in n.pair.list) {
         for (algo in algo_list) {
             for (n.cova in n.cova.list) {
@@ -336,7 +336,7 @@ for (iphase in c(1:nphase)) {
         }
     }
     View(fin.out)
-    write.csv(fin.out, paste0("match_res_clogadj.csv"))
+    write.csv(fin.out, paste0("match_res_clogadj_phase810.csv"))
 }
 
 
