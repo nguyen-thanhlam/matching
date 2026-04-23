@@ -12,8 +12,8 @@ library("SensitivityCaseControl")
 for (strat in strategy) {
   for (algo in algo_list) {
     for (nc in n.cova.list) {
-      for (scale in scale.cens.list) {
-        for (ttm in ttm.prop.list) {
+      for (ttm.prop in ttm.prop.list) {
+        for (event.prop in event.prop.list) {
         
         pvalue.match = c()
         pvalue.cmatch = c()
@@ -21,9 +21,7 @@ for (strat in strategy) {
         clog_pval = c()
         clog_ci = c()
         
-        n.cova <- nc
-        scale.cens <- scale
-        ttm.prop <- ttm
+        scale.cens <- scale.res[(scale.res$n.cova==n.cova)&(scale.res$ttm.prop==ttm.prop)&(scale.res$event.prop==event.prop),'scale.cens']
         
         name = NA
         for (k in 1:n.cova) name = c(name,paste0("c", k))
@@ -31,16 +29,11 @@ for (strat in strategy) {
         
         for ( z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))) ) {
           set.seed(z)
-          cat("Propensity score ", algo,
-              "strategy " , strat, nc, " covariates ",
-              ", event.prop ", ifelse(scale==26.3,0.01,ifelse(scale==55.2,0.05,0.10)),
-              ", ttm.prop ", ttm,
-              ", iter ",z,"/",nsim,
-              " \r")
+          cat("Propensity score, iter ",z,"/",nsim," \r")
           flush.console()
           
           # Population 2*1e4 when event prob == 1%, else 1e4
-          n = ifelse(scale.cens == 26.3, 20000, 10000)
+          n = ifelse(event.prop == 0.01, 20000*n.pair/200, 10000*n.pair/200)
           
           data = sim(n = n, 
                      hr.ttm = hr.ttm, 
@@ -178,9 +171,9 @@ for (strat in strategy) {
             algo      = algo,
             approach  = "ps",
             n         = n,
-            n.cova    = nc,
-            event.prob = ifelse(scale==26.3,1,ifelse(scale==55.2,5,10)),
-            ttm.prob  = ttm,
+            n.cova    = n.cova,
+            event.prob = event.prop,
+            ttm.prob  = ttm.prop,
             seed = c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))),
             mh_pval   = pvalue.match,
             clog_coef = clog_coef,

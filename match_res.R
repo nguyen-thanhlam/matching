@@ -17,18 +17,18 @@ pair.cm = c()
 cm.fail = c()
 
 # Simulation parameters
-nphase = 10
-nsim = 100
+nphase = c(1:10)
+nsim = 1
 n.pair = 200
 n = 20000
 px.str = 3
-hr.ttm = 1
+hr.ttm = 1.5
 
 # Treatment prob = 10% and 50%
 ttm.prop.list = c(0.1, 0.5)
 
 # Scale cens --> event prob 1%, 5%, 10%
-scale.cens.list = c(26.3, 55.2, 79.6)
+event.prop.list = c(0.01, 0.05, 0.10)
 
 # Nb of cova
 n.cova.list = c(4, 10, 20)
@@ -37,13 +37,13 @@ n.hx = n
 conv = 0
 
 # List of algorithms
-algo_list = c('A1') #A2
+algo_list = c('A1','A2')
 
 #--------------------
 # Simulation function
 #--------------------
 
-sim <- function(n = 10000, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5, 
+sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5, 
                 px.str = 3, scale.cens = 100, ttm.prop = 0.1, n.cova = 20) {
   
   px <- rbinom(n, 1, 0.5)
@@ -80,6 +80,53 @@ sim <- function(n = 10000, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5,
   return(out)
 }
 
+scanning.scale = function(event.prop.list) {
+    res = c()
+    for (n.cova in n.cova.list) {
+        for (ttm.prop in ttm.prop.list) {
+          for (event.prop in event.prop.list) {
+              set.seed(1)
+              h = 5e-3
+              scale.cens = 50
+              data = sim(n = 1e6, 
+                          hr.ttm = hr.ttm, 
+                          px.str = px.str, 
+                          ttm.prop = ttm.prop, 
+                          scale.cens = scale.cens, 
+                          n.cova = n.cova)
+              check = event.prop - mean(data$stt)
+              n = 1
+              if (abs(check)<h) {new.scale = scale.cens}
+              while (abs(check)>h) {
+                  prev.check = check
+                  a = ifelse(check <0, -1, 1)
+                  new.scale = scale.cens + scale.cens*n*0.1*a
+                  cat(event.prop,new.scale,n,"\r")
+                  flush.console()
+                  set.seed(1)
+                  data = sim(n = 1e6, 
+                          hr.ttm = hr.ttm, 
+                          px.str = px.str, 
+                          ttm.prop = ttm.prop, 
+                          scale.cens = new.scale, 
+                          n.cova = n.cova)
+                  check = event.prop - mean(data$stt)
+                  if (check*prev.check <0) {a = a*(-1); n = n - exp(check)} else {n = n + exp(check)}
+                  }
+              set.seed(1)
+              data = sim(n = 1e6, 
+                        hr.ttm = hr.ttm, 
+                        px.str = px.str, 
+                        ttm.prop = ttm.prop, 
+                        scale.cens = new.scale, 
+                        n.cova = n.cova)
+              res = rbind(res, c(n.cova,ttm.prop,event.prop,mean(data$stt),new.scale))            
+              }              
+          }
+      }
+    res = data.frame(res)
+    colnames(res) = c('n.cova','ttm.prop','event.prop','pop.event.prop','scale.cens')
+    return(res)}
 # -------------------------
 # Counter-matching function
 # -------------------------
@@ -119,18 +166,18 @@ names <- c("clog_mhl1", "clog_ps1", "clog_drs1")
 #  source(paste0(x, ".r"), local = TRUE)
 #  return(res) 
 #})
+scale.res = scanning.scale(event.prop.list = event.prop.list)
 
 res = c()
 mhl_res <- c()
 drs_res <- c()
 ps_res <- c()
-for (iphase in 1:nphase) {
+for (iphase in nphase) {
   for (x in names) {
     source(paste0(x, ".r"), local = TRUE)
   }
   res <- rbind(mhl_res, ps_res, drs_res)
-  View(res)
-  write.csv(res, paste0("match_resA1.csv"))
+  write.csv(res, paste0("match_resA1_pwtest.csv"))
 }
 
 #names(res) <- names
