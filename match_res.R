@@ -18,7 +18,7 @@ cm.fail = c()
 
 # Simulation parameters
 nphase = c(1:10)
-nsim = 1
+nsim = 100
 n.pair = 200
 n = 20000
 px.str = 3
@@ -37,7 +37,7 @@ n.hx = n
 conv = 0
 
 # List of algorithms
-algo_list = c('A1','A2')
+algo_list = c('A1')
 
 #--------------------
 # Simulation function
@@ -177,7 +177,7 @@ for (iphase in nphase) {
     source(paste0(x, ".r"), local = TRUE)
   }
   res <- rbind(mhl_res, ps_res, drs_res)
-  write.csv(res, paste0("match_resA1_pwtest.csv"))
+  write.csv(res, paste0("/work/ttkle/matching/match_res",algo_list,"_pw.csv"))
 }
 
 #names(res) <- names

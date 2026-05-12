@@ -28,7 +28,7 @@ for (strat in strategy) {
           
           for ( z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))) ) {
             set.seed(z)
-            cat("Mahalanobis distance, iter ",z,"/",nsim," \r")
+            cat("Mahalanobis distance,",algo," iter ",z,"/",nsim," \r")
             flush.console()
             
             n = ifelse(event.prop == 0.01, 20000*n.pair/200, 10000*n.pair/200)
