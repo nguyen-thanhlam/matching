@@ -16,12 +16,13 @@ col = c('strategy',
         'clog_lower',
         'clog_upper')
 # Ensure data is available
-beta = 1.5
-resa1 = read.csv("match_resA1.csv")
-resa2 = read.csv("match_resA2.csv")
+beta = log(1.5)
+#resa1 = read.csv("match_resA1.csv")
+#resa2 = read.csv("match_resA2.csv")
 # Convert to data frame if needed
-res <- rbind(resa1[,c(col)],resa2[,c(col)])
+#res <- rbind(resa1[,c(col)],resa2[,c(col)])
 
+res <- read.csv("match_res_pw.csv")
 # Treat variables as categorical
 res$strategy <- factor(res$strategy, levels = c("matching", "counter-matching"), labels = c("m", "cm"))
 res$algo <- factor(res$algo, levels = c("A1", "A2"), labels = c("A1", "A2"))

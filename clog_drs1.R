@@ -29,7 +29,7 @@ for (strat in strategy) {
           
           for ( z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))) ) {
             set.seed(z)
-            cat("Disease risk score, iter ",z,"/",nsim," \r")
+            cat("Disease risk score,",algo," iter ",z,"/",nsim," \r")
             flush.console()
             
             # Population 2*1e4 when event prob == 1%, else 1e4

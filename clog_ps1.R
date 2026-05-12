@@ -11,7 +11,7 @@ library("SensitivityCaseControl")
 #-------------------------------------------
 for (strat in strategy) {
   for (algo in algo_list) {
-    for (nc in n.cova.list) {
+    for (n.cova in n.cova.list) {
       for (ttm.prop in ttm.prop.list) {
         for (event.prop in event.prop.list) {
         
@@ -29,7 +29,7 @@ for (strat in strategy) {
         
         for ( z in c((1+nsim*(iphase-1)):(nsim+nsim*(iphase-1))) ) {
           set.seed(z)
-          cat("Propensity score, iter ",z,"/",nsim," \r")
+          cat("Propensity score,",algo," iter ",z,"/",nsim," \r")
           flush.console()
           
           # Population 2*1e4 when event prob == 1%, else 1e4
