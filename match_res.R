@@ -174,7 +174,7 @@ drs_res <- c()
 ps_res <- c()
 for (iphase in nphase) {
   for (x in names) {
-    source(paste0(x, ".r"), local = TRUE)
+    source(paste0(x, ".R"), local = TRUE)
   }
   res <- rbind(mhl_res, ps_res, drs_res)
   write.csv(res, paste0("/work/ttkle/matching/match_res",algo_list,"_pw.csv"))
