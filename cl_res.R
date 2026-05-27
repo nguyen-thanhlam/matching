@@ -165,4 +165,5 @@ results <- parLapplyLB(cl, tasks, worker)
 stopCluster(cl)
 
 nms <- unique(unlist(lapply(results, names)))
-result <- setNames(lapply(nms, function(nm) {do.call(rbind, lapply(results, `[[`, nm))}), nms)
+res <- do.call(rbind, lapply(nms, function(nm) {do.call(rbind, lapply(results, `[[`, nm))}))
+write.csv(res, paste0("/work/ttkle/matching/match_res",algo_list,"_pw__test.csv"))
