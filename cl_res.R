@@ -1,7 +1,7 @@
 library(parallel)
 
 # Simulation parameters
-nsim = 3
+nsim = 100
 n = 20000
 px.str = 3
 hr.ttm = 1.5
@@ -11,7 +11,7 @@ n.pair.list = c(200,500)
 ttm.prop.list = c(0.1, 0.5)
 ttm.prop.list = c(0.1)
 event.prop.list = c(0.01, 0.05, 0.10)
-event.prop.list = c(0.01)
+event.prop.list = c(0.05)
 n.cova.list = c(4, 10, 20)
 n.cova.list = c(2)
 r.penalty.list = c(0.5, 1, 5, 10)

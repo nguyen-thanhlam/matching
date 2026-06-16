@@ -127,8 +127,11 @@ for (iparams in c(1:nrow(params))) {
         # Clogit
         clog_dat <- rbind(case.noc, ctrl.noc)
         clog_dat <- clog_dat[order(clog_dat$pair),]              
-        clog_mod <- clogit(stt ~ ttm + strata(pair), data = clog_dat, method = "breslow")
-        
+        if (algo=="A1") {
+            clog_mod <- clogit(stt ~ ttm + strata(pair), data = clog_dat, method = "breslow")
+        } else {
+            clog_mod <- clogit(stt ~ ttm + strata(pair) + cluster(id), data = clog_dat, method = "breslow")
+        } 
         clog_sum <- summary(clog_mod)              
         clog_coef <- c(clog_coef, clog_sum$coefficients[1, 1])
         clog_pval <- c(clog_pval, clog_sum$coefficients[1, 5])
