@@ -17,12 +17,12 @@ col = c('strategy',
         'clog_upper')
 # Ensure data is available
 beta = log(1.5)
-#resa1 = read.csv("match_resA1.csv")
-#resa2 = read.csv("match_resA2.csv")
+resa1 = read.csv("match_resA1_pw.csv")
+resa2 = read.csv("match_resA2_pw.csv")
 # Convert to data frame if needed
-#res <- rbind(resa1[,c(col)],resa2[,c(col)])
+res <- rbind(resa1[,c(col)],resa2[,c(col)])
 
-res <- read.csv("match_res_pw.csv")
+#res <- read.csv("match_res_pw.csv")
 # Treat variables as categorical
 res$strategy <- factor(res$strategy, levels = c("matching", "counter-matching"), labels = c("m", "cm"))
 res$algo <- factor(res$algo, levels = c("A1", "A2"), labels = c("A1", "A2"))
@@ -30,7 +30,6 @@ res$approach <- factor(res$approach)
 res$n.cova <- factor(res$n.cova)
 res$event.prob <- factor(res$event.prob)
 res$ttm.prob <- factor(res$ttm.prob)
-
 
 # Combine strategy and approach for plotting, and order for bars
 
@@ -77,7 +76,6 @@ calc_coverage <- function(data, beta) {
     n = n_total
   ))
 }
-
 
 
 # Summarize for type 1 error (MH)

@@ -15,12 +15,14 @@ for (iparams in c(1:nrow(params))) {
     n.cova = params[iparams,"n.cova"]
     ttm.prop = params[iparams,"ttm.prop"]
     event.prop = params[iparams,"event.prop"]      
+    r.penalty = params[iparams,"r.penalty"]
 
     pvalue.match = c()
     pvalue.cmatch = c()
     clog_coef = c()
     clog_pval = c()
     clog_ci = c()
+    #cnt.match.prob = c()
     
     scale.cens <- scale.res[(scale.res$n.cova==n.cova)&(scale.res$ttm.prop==ttm.prop)&(scale.res$event.prop==event.prop),'scale.cens']
     
@@ -29,6 +31,7 @@ for (iparams in c(1:nrow(params))) {
     name = name[-1]
     
     for ( z in split(c(1:nsim), ceiling(seq_along(c(1:nsim))/ceiling(nsim/nworkers)))[[iphase]] ) {
+      #cnt.match = 0
       set.seed(z)
       # Population 2*1e4 when event prob == 1%, else 1e4
       n = ifelse(event.prop == 0.01, 20000*n.pair/200, 10000*n.pair/200)
@@ -98,11 +101,12 @@ for (iparams in c(1:nrow(params))) {
           } else {
             dist_list1 <- addrevcaliper(dist = dist_list, z = d$case, 
                                         dx = d$px, rg = c(-0.5, 0.5), 
-                                        stdev = TRUE, penalty = max(dist_list$d))
+                                        stdev = TRUE, penalty = max(dist_list$d), r.penalty=10)
           }
         }
         
-        o1<-match(z = d$case, dist = dist_list1, dat = d, ncontrol=1)
+        o1 <- DiPs::match(z = d$case, dist = dist_list1, dat = d, ncontrol=1)
+        #cnt.match = ifelse(length(unique(o1$data$px))>1,cnt.match+1,cnt.match)
         
         if (o1$feasible == TRUE && nrow(o1$data) >= 2) {
           ctrl.i.id = o1$data$id[2]
@@ -110,7 +114,7 @@ for (iparams in c(1:nrow(params))) {
           j = j + 1
         }
       }
-      
+      #cnt.match.prob = c(cnt.match.prob, cnt.match / (nrow(sel)-1))
       
       if (nrow(sel) > 1) {
         selected = as.data.frame(sel[-1, , drop = FALSE]) 
@@ -151,6 +155,8 @@ for (iparams in c(1:nrow(params))) {
       n.cova    = n.cova,
       event.prob = event.prop,
       ttm.prob  = ttm.prop,
+      r.penalty = r.penalty,
+      #cnt.match.prob = cnt.match.prob,
       seed = split(c(1:nsim), ceiling(seq_along(c(1:nsim))/ceiling(nsim/nworkers)))[[iphase]],
       mh_pval   = pvalue.match,
       clog_coef = clog_coef,

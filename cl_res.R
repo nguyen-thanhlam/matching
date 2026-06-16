@@ -2,22 +2,31 @@ library(parallel)
 
 # Simulation parameters
 nsim = 3
-n.pair = 200
 n = 20000
 px.str = 3
 hr.ttm = 1.5
 strategy = c("matching", "counter-matching")
-algo_list = c('A1')
+algo_list = c('A1', 'A2')
+n.pair.list = c(200,500)
 ttm.prop.list = c(0.1, 0.5)
+ttm.prop.list = c(0.1)
 event.prop.list = c(0.01, 0.05, 0.10)
+event.prop.list = c(0.01)
 n.cova.list = c(4, 10, 20)
+n.cova.list = c(2)
+r.penalty.list = c(0.5, 1, 5, 10)
+r.penalty.list = c(1)
 params <- expand.grid(strat = strategy,
                     algo = algo_list,
                     n.cova = n.cova.list,
                     ttm.prop = ttm.prop.list,
                     event.prop = event.prop.list,
+                    r.penalty = r.penalty.list,
+                    n.pair = n.pair.list,
                     KEEP.OUT.ATTRS = FALSE,
                     stringsAsFactors = FALSE)
+params$r.penalty[params$strat=='matching'] = NA
+params = unique(params)
 
 sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5, 
                 px.str = 3, scale.cens = 100, ttm.prop = 0.1, n.cova = 20) {  
@@ -25,9 +34,10 @@ sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5,
 
     cova <- matrix(0, ncol = n.cova, nrow = n)
     name <- NA
-    
-    for (k in 1:n.cova) {
-        cova[, k] <- runif(n, -0.5, 0.5)
+    ####################### test binary ##########################################
+    for (k in 1:n.cova) { 
+        cova[, k] <- rbinom(n, 1, 0.3)
+        #cova[, k] <- runif(n, -0.5, 0.5)
         name <- c(name, paste0("c", k))
     }
     colnames(cova) <- name[-1]
@@ -102,12 +112,13 @@ scanning.scale = function(event.prop.list) {
     colnames(res) = c('n.cova','ttm.prop','event.prop','pop.event.prop','scale.cens')
     return(res)
 }
-  
-addrevcaliper<-function(dist,z,dx,rg, stdev = FALSE, penalty = 1000){
+
+addrevcaliper<-function(dist,z,dx,rg, stdev = FALSE, penalty = max(dist$d), r.penalty = 10) {
     stopifnot(is.vector(rg)&(length(rg)==2))
     stopifnot((rg[1]<=0)&(rg[2]>=0))  
     stopifnot(is.vector(z))
-    stopifnot(all((z==1)|(z==0)))  
+    stopifnot(all((z==1)|(z==0)))
+    penalty = r.penalty*penalty 
     dx1<-dx[z==1]
     dx0<-dx[z==0]  
     v <- stats::var(dx)
@@ -116,8 +127,7 @@ addrevcaliper<-function(dist,z,dx,rg, stdev = FALSE, penalty = 1000){
     if (stdev) rg <- rg *sp  
     m=sum(z)
     dif<-dx1[dist$start]-dx0[dist$end-m]
-    d <- dist$d + as.numeric(dif<rg[2])*penalty
-    d <- d + as.numeric(dif>rg[1])*penalty  
+    d <- dist$d + as.numeric((dif>rg[1])&(dif<rg[2]))*penalty
     list(d=d,start=dist$start,end=dist$end)
 }
 scale.res = scanning.scale(event.prop.list = event.prop.list)
@@ -129,7 +139,6 @@ worker <- function(task) {
     env <- new.env(parent = globalenv())
     env$params <- params
     env$nsim <- nsim
-    env$n.pair <- n.pair
     env$n <- n
     env$px.str <- px.str
     env$hr.ttm <- hr.ttm
@@ -138,19 +147,21 @@ worker <- function(task) {
     env$addrevcaliper <- addrevcaliper
     env$nworkers <- nworkers
     env$iphase <- task
+    env$ex_res <- c()
     env$mhl_res <- c()
     env$drs_res <- c()
     env$ps_res <- c()
 
-    for (script in c("clog_mhl1.R", "clog_ps1.R", "clog_drs1.R")) {
-        source(paste0("/work/ttkle/matching/",script), local = env)
+    for (script in c("clog_ex.R","clog_mhl1.R", "clog_ps1.R", "clog_drs1.R")) { 
+        source(paste0("/work/ttkle/matching/",script), local = env) #
     }
-    list(mhl = env$mhl_res,
-    ps  = env$ps_res,
-    drs = env$drs_res)
+    list(ex = env$ex_res,
+        mhl = env$mhl_res,
+        ps  = env$ps_res,
+        drs = env$drs_res)
 }
 
-clusterExport(cl, c("params", "nsim", "n.pair", "n", "px.str", "hr.ttm",
+clusterExport(cl, c("params", "nsim", "n", "px.str", "hr.ttm",
                     "sim", "addrevcaliper", "scale.res", "tasks", "worker", "nworkers"))
 
 clusterEvalQ(cl, {

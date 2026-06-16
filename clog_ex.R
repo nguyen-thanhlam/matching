@@ -1,4 +1,4 @@
-# MHL (Mahalanobis Distance Matching)
+# ex (EXact Matching)
 library("remotes")
 library("DiPs")
 library("survival")
@@ -13,6 +13,7 @@ for (iparams in c(1:nrow(params))) {
     ttm.prop = params[iparams,"ttm.prop"]
     event.prop = params[iparams,"event.prop"]
     r.penalty = params[iparams,"r.penalty"]
+    n.pair = params[iparams,"n.pair"]
 
     pvalue.match = c()
     pvalue.cmatch = c()
@@ -37,8 +38,6 @@ for (iparams in c(1:nrow(params))) {
                   ttm.prop = ttm.prop, 
                   scale.cens = scale.cens,
                   n.cova = n.cova)
-      #print(mean(data$ttm))
-      #print(mean(data$stt))
       # -------------------------
       # No counter-matching (noc)
       # ------------------------- 
@@ -64,46 +63,23 @@ for (iparams in c(1:nrow(params))) {
         # Mahalanobis 
         X_case <- d[1, name, drop = FALSE]
         X_ctrl <- d[-1, name, drop = FALSE]        
-        if (nrow(X_ctrl) < 2) next
-        cov_ctrl <- cov(X_ctrl)        
-        # Check if covariance is singular, use generalized inverse if needed
-        if (rcond(cov_ctrl) < 1e-10) {
-          cov_ctrl_inv <- MASS::ginv(cov_ctrl)
-          dist_vector <- mahalanobis(x = as.matrix(X_ctrl), 
-                                      center = as.numeric(X_case), 
-                                      cov = cov_ctrl_inv,
-                                      inverted = TRUE)
+        id_ctrl <- d[-1, 'id', drop = FALSE]
+
+        X_diff <- X_ctrl - c(X_case)
+        X_zero <- which(rowSums(X_diff == 0) == ncol(X_diff))
+        if (strat=="match") {
+            random_index <- sample(X_zero, 1)
         } else {
-          dist_vector <- mahalanobis(x = as.matrix(X_ctrl), 
-                                      center = as.numeric(X_case), 
-                                      cov = cov_ctrl)
+            px_case = d[1, 'px', drop=FALSE]
+            px_ctrl = d[-1, 'px', drop=FALSE]
+            px_diff = px_ctrl - c(px_case)
+            px_zero = which(rowSums(px_diff != 0) == ncol(px_diff))
+            common = intersect(X_zero, px_zero)
+            random_index <- sample(common, 1)
         }
-        
-        dist_list <- list(
-          start = rep(1, nrow(X_ctrl)),
-          end   = 2:(nrow(X_ctrl) + 1),
-          d     = as.numeric(dist_vector)
-        )
-        
-        if (strat == "matching") {
-          dist_list1 <- dist_list
-        } else {
-          if (var(d$px) == 0) {
-            dist_list1 <- dist_list
-          } else {
-            dist_list1 <- addrevcaliper(dist = dist_list, z = d$case, 
-                                        dx = d$px, rg = c(-0.5, 0.5), 
-                                        stdev = TRUE, penalty = max(dist_list$d), r.penalty=r.penalty)
-          }
-        }
-        o1 <- DiPs::match(z = d$case, dist = dist_list1, dat = d, ncontrol = 1)
-        #cnt.match = ifelse(length(unique(o1$data$px))>1,cnt.match+1,cnt.match)
-        
-        if (o1$feasible == TRUE && nrow(o1$data) >= 2) {
-          ctrl.i.id = o1$data$id[2]
-          sel = rbind(sel, c(source.noc$id[i], ctrl.i.id, j))
-          j = j + 1
-        }
+        ctrl.i.id = id_ctrl[random_index,'id']
+        sel = rbind(sel, c(source.noc$id[i], ctrl.i.id, j))
+        j = j + 1
       }
       #cnt.match.prob = c(cnt.match.prob, cnt.match / (nrow(sel)-1))
 
@@ -115,7 +91,6 @@ for (iparams in c(1:nrow(params))) {
         ctrl.noc = merge(source.noc, selected[, c('id.ctrl', 'pair')], by.x='id', by.y='id.ctrl')
         ctrl.noc$stt = 0
         
-        
         case.noc = case.noc[order(case.noc$pair), ]
         ctrl.noc = ctrl.noc[order(ctrl.noc$pair), ]
         
@@ -123,24 +98,26 @@ for (iparams in c(1:nrow(params))) {
         pvalue.match = c(pvalue.match, sens.analysis.mh(cases.exposed = case.noc$ttm,
                                                         referents.exposed = ctrl.noc$ttm,
                                                         no.referents = 1, Gamma = 1)$lower.bound.pval)
-        
         # Clogit
         clog_dat <- rbind(case.noc, ctrl.noc)
-        clog_dat <- clog_dat[order(clog_dat$pair),]              
-        clog_mod <- clogit(stt ~ ttm + strata(pair), data = clog_dat, method = "breslow")
-        
-        clog_sum <- summary(clog_mod)              
+        clog_dat <- clog_dat[order(clog_dat$pair),]
+        if (algo=="A1") {
+            clog_mod <- clogit(stt ~ ttm + strata(pair), data = clog_dat, method = "breslow")
+        } else {
+            clog_mod <- clogit(stt ~ ttm + strata(pair) + cluster(id), data = clog_dat, method = "breslow")
+        }             
+        clog_sum <- summary(clog_mod)             
         clog_coef <- c(clog_coef, clog_sum$coefficients[1, 1])
         clog_pval <- c(clog_pval, clog_sum$coefficients[1, 5])
         clog_ci <- rbind(clog_ci,confint(clog_mod))  
       }
     }
     
-    mhl_res <- do.call(rbind, list(mhl_res,
+    ex_res <- do.call(rbind, list(ex_res,
     data.frame(
       strategy  = strat,
       algo      = algo,
-      approach  = "mhl",
+      approach  = "ex",
       n         = n,
       n.cova    = n.cova,
       event.prob = event.prop,
