@@ -17,25 +17,26 @@ col = c('strategy',
         'clog_upper')
 # Ensure data is available
 beta = log(1.5)
-resa1 = read.csv("match_resA1_pw.csv")
-resa2 = read.csv("match_resA2_pw.csv")
+resa1 = read.csv("res_pw_checkvar.csv")
 # Convert to data frame if needed
-res <- rbind(resa1[,c(col)],resa2[,c(col)])
+res = resa1
+#res <- rbind(resa1[,c(col)],resa2[,c(col)])
 
 #res <- read.csv("match_res_pw.csv")
 # Treat variables as categorical
 res$strategy <- factor(res$strategy, levels = c("matching", "counter-matching"), labels = c("m", "cm"))
 res$algo <- factor(res$algo, levels = c("A1", "A2"), labels = c("A1", "A2"))
 res$approach <- factor(res$approach)
-res$n.cova <- factor(res$n.cova)
+#res$n.cova <- factor(res$n.cova)
+res$n.cova <- factor(res$n)
 res$event.prob <- factor(res$event.prob)
 res$ttm.prob <- factor(res$ttm.prob)
 
 # Combine strategy and approach for plotting, and order for bars
 
 # Order for bars: m-drs, cm-drs, m-ps, cm-ps, m-mhl, cm-mhl
-approach_levels <- c("drs", "ps", "mhl")
-strat_app_levels <- c("m-drs", "cm-drs", "m-ps", "cm-ps", "m-mhl", "cm-mhl")
+approach_levels <- c("ex", "drs", "ps", "mhl")
+strat_app_levels <- c("m-ex", "cm-ex", "m-drs", "cm-drs", "m-ps", "cm-ps", "m-mhl", "cm-mhl")
 res$strat_app <- factor(paste0(res$strategy, "-", res$approach), levels = strat_app_levels)
 
 # Function to calculate type 1 error with confidence interval
@@ -105,7 +106,7 @@ ttm_labeller <- function(x) {
   c("0.1" = "Treatment probability 0.1",
     "0.5" = "Treatment probability 0.5")[x]
 }
-
+colors = c("#6A0DAD","#C8A2C8","#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")
 # Plot 1: Type 1 Error (MH p-value) with fixed 95% reference band and 5% line
 plot_type1_mh <- ggplot(type1_mh_df, aes(x = event.prob, y = prop, fill = strat_app)) +
   #annotate("rect", xmin = -Inf, xmax = Inf, ymin = 0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), ymax = 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), alpha = 0.15, fill = "grey") +
@@ -113,7 +114,7 @@ plot_type1_mh <- ggplot(type1_mh_df, aes(x = event.prob, y = prop, fill = strat_
   geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1])), linetype = "dashed", color = "grey40") +
   geom_hline(yintercept = 0.05, linetype = "dashed", color = "red", size = 0.5) +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
-  scale_fill_manual(values = c("#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")) +
+  scale_fill_manual(values = colors) +
   labs(title = "Type 1 Error (MH p-value)", x = "Event Probability", y = "Proportion p < 0.05", fill = "Approach") +
   theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95"))
 
@@ -127,7 +128,7 @@ plot_type1_clog <- ggplot(type1_clog_df, aes(x = event.prob, y = prop, fill = st
   geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1])), linetype = "dashed", color = "grey40") +
   geom_hline(yintercept = 0.05, linetype = "dashed", color = "red", size = 0.5) +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
-  scale_fill_manual(values = c("#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")) +
+  scale_fill_manual(values = colors) +
   labs(title = "Type 1 Error (Clogit p-value)", x = "Event Probability", y = "Proportion p < 0.05", fill = "Approach") +
   theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95"))
 
@@ -138,7 +139,7 @@ plot_coef_dist <- ggplot(coef_all, aes(x = event.prob, y = clog_coef, fill = str
   geom_boxplot(position = position_dodge(width = 0.9), outlier.size = 0.8, width = 0.7) +
   geom_hline(yintercept = beta, linetype = "dashed", color = "red", size = 0.5) +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
-  scale_fill_manual(values = c("#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")) +
+  scale_fill_manual(values = colors) +
   labs(title = "Distribution of Clogit Coefficients", x = "Event Probability", y = "Coefficient Value", fill = "Approach") +
   theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95")) +
   coord_cartesian(ylim = c(-3, 3))
@@ -150,10 +151,10 @@ plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_
   #geom_errorbar(aes(ymin = lower, ymax = upper), position = position_dodge(width = 0.9), width = 0.2) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "red", size = 0.5) +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
-  scale_fill_manual(values = c("#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")) +
+  scale_fill_manual(values = colors) +
   labs(title = "Coverage (95% CI includes true parameter)", x = "Event Probability", y = "Coverage Proportion", fill = "Approach") +
   theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95")) +
-  coord_cartesian(ylim = c(0.8, 1))
+  coord_cartesian(ylim = c(0, 1))
   #scale_y_continuous(limits = c(0.5, 1.1), breaks = seq(0.5, 1.1, 0.05))
 
 

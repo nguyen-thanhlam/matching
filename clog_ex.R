@@ -20,7 +20,6 @@ for (iparams in c(1:nrow(params))) {
     clog_coef = c()
     clog_pval = c()
     clog_ci = c()
-    #cnt.match.prob = c()
 
     scale.cens <- scale.res[(scale.res$n.cova==n.cova)&(scale.res$ttm.prop==ttm.prop)&(scale.res$event.prop==event.prop),'scale.cens']
     name = NA
@@ -28,7 +27,6 @@ for (iparams in c(1:nrow(params))) {
     name = name[-1]
     
     for ( z in split(c(1:nsim), ceiling(seq_along(c(1:nsim))/ceiling(nsim/nworkers)))[[iphase]] ) {
-      #cnt.match = 0
       set.seed(z)
 
       n = ifelse(event.prop == 0.01, 20000*n.pair/200, 10000*n.pair/200)
@@ -81,7 +79,6 @@ for (iparams in c(1:nrow(params))) {
         sel = rbind(sel, c(source.noc$id[i], ctrl.i.id, j))
         j = j + 1
       }
-      #cnt.match.prob = c(cnt.match.prob, cnt.match / (nrow(sel)-1))
 
       if (nrow(sel) > 1) {
         selected = as.data.frame(sel[-1, , drop = FALSE]) 
@@ -101,11 +98,8 @@ for (iparams in c(1:nrow(params))) {
         # Clogit
         clog_dat <- rbind(case.noc, ctrl.noc)
         clog_dat <- clog_dat[order(clog_dat$pair),]
-        if (algo=="A1") {
-            clog_mod <- clogit(stt ~ ttm + strata(pair), data = clog_dat, method = "breslow")
-        } else {
-            clog_mod <- clogit(stt ~ ttm + strata(pair) + cluster(id), data = clog_dat, method = "breslow")
-        }             
+        clog_mod <- clogit(stt ~ ttm + strata(pair), data = clog_dat, method = "breslow")
+
         clog_sum <- summary(clog_mod)             
         clog_coef <- c(clog_coef, clog_sum$coefficients[1, 1])
         clog_pval <- c(clog_pval, clog_sum$coefficients[1, 5])
@@ -123,7 +117,6 @@ for (iparams in c(1:nrow(params))) {
       event.prob = event.prop,
       ttm.prob  = ttm.prop,
       r.penalty = r.penalty,
-      #cnt.match.prob = cnt.match.prob,
       seed = split(c(1:nsim), ceiling(seq_along(c(1:nsim))/ceiling(nsim/nworkers)))[[iphase]],
       mh_pval   = pvalue.match,
       clog_coef = clog_coef,

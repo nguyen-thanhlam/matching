@@ -1,7 +1,7 @@
 library(parallel)
 
 # Simulation parameters
-nsim = 100
+nsim = 1000
 n = 20000
 px.str = 3
 hr.ttm = 1.5
@@ -9,12 +9,9 @@ strategy = c("matching", "counter-matching")
 algo_list = c('A1', 'A2')
 n.pair.list = c(200,500)
 ttm.prop.list = c(0.1, 0.5)
-ttm.prop.list = c(0.1)
 event.prop.list = c(0.01, 0.05, 0.10)
-event.prop.list = c(0.05)
-n.cova.list = c(4, 10, 20)
-n.cova.list = c(2)
-r.penalty.list = c(0.5, 1, 5, 10)
+n.cova.list = c(2, 4, 10, 20)
+#r.penalty.list = c(0.5, 1, 5, 10)
 r.penalty.list = c(1)
 params <- expand.grid(strat = strategy,
                     algo = algo_list,
@@ -36,8 +33,8 @@ sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5,
     name <- NA
     ####################### test binary ##########################################
     for (k in 1:n.cova) { 
-        cova[, k] <- rbinom(n, 1, 0.3)
-        #cova[, k] <- runif(n, -0.5, 0.5)
+        #cova[, k] <- rbinom(n, 1, 0.3)
+        cova[, k] <- runif(n, -0.5, 0.5)
         name <- c(name, paste0("c", k))
     }
     colnames(cova) <- name[-1]
@@ -131,7 +128,7 @@ addrevcaliper<-function(dist,z,dx,rg, stdev = FALSE, penalty = max(dist$d), r.pe
     list(d=d,start=dist$start,end=dist$end)
 }
 scale.res = scanning.scale(event.prop.list = event.prop.list)
-nworkers <- detectCores() - 1
+nworkers <- detectCores()
 cl <- makeCluster(nworkers)
 tasks <- c(1:nworkers)
 
@@ -147,15 +144,15 @@ worker <- function(task) {
     env$addrevcaliper <- addrevcaliper
     env$nworkers <- nworkers
     env$iphase <- task
-    env$ex_res <- c()
+    #env$ex_res <- c()
     env$mhl_res <- c()
     env$drs_res <- c()
     env$ps_res <- c()
 
-    for (script in c("clog_ex.R","clog_mhl1.R", "clog_ps1.R", "clog_drs1.R")) { 
+    for (script in c("clog_mhl1.R", "clog_ps1.R", "clog_drs1.R")) { #"clog_ex.R",
         source(paste0("/work/ttkle/matching/",script), local = env) #
     }
-    list(ex = env$ex_res,
+    list(#ex = env$ex_res,
         mhl = env$mhl_res,
         ps  = env$ps_res,
         drs = env$drs_res)
@@ -177,4 +174,4 @@ stopCluster(cl)
 
 nms <- unique(unlist(lapply(results, names)))
 res <- do.call(rbind, lapply(nms, function(nm) {do.call(rbind, lapply(results, `[[`, nm))}))
-write.csv(res, paste0("/work/ttkle/matching/res",algo_list,"_pw_cl_test.csv"))
+write.csv(res, paste0("/work/ttkle/matching/res_pw_checkvar.csv"))
