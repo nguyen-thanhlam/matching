@@ -1,7 +1,7 @@
 library(parallel)
 
 # Simulation parameters
-nsim = 1000
+nsim = 100
 n = 20000
 px.str = 3
 hr.ttm = 1.5
@@ -23,6 +23,8 @@ params <- expand.grid(strat = strategy,
                     KEEP.OUT.ATTRS = FALSE,
                     stringsAsFactors = FALSE)
 params$r.penalty[params$strat=='matching'] = NA
+params = params[!(params$n.cova>2 & params$n.pair==200), ]
+
 params = unique(params)
 
 sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5, 
