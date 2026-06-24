@@ -1,5 +1,4 @@
 # Disease Risk Score
-
 library("remotes")
 library("DiPs")
 library("survival")
@@ -28,7 +27,7 @@ for (iparams in c(1:nrow(params))) {
     for (k in 1:n.cova) name = c(name,paste0("c", k))
     name = name[-1]
     
-    for ( z in split(c(1:nsim), ceiling(seq_along(c(1:nsim))/ceiling(nsim/nworkers)))[[iphase]] ) {
+    for ( z in split(c(1:nsim), cut(c(1:nsim), breaks = nworkers, labels = FALSE))[[iphase]]) {
       set.seed(z)
       # Population 2*1e4 when event prob == 1%, else 1e4
       n = ifelse(event.prop == 0.01, 20000*n.pair/200, 10000*n.pair/200)
@@ -98,7 +97,7 @@ for (iparams in c(1:nrow(params))) {
           } else {
             dist_list1 <- addrevcaliper(dist = dist_list, z = d$case, 
                                         dx = d$px, rg = c(-0.5, 0.5), 
-                                        stdev = TRUE, penalty = max(dist_list$d), r.penalty=10)
+                                        stdev = TRUE, penalty = max(dist_list$d), r.penalty=r.penalty)
           }
         }
         
@@ -110,7 +109,6 @@ for (iparams in c(1:nrow(params))) {
           j = j + 1
         }
       }
-      #cnt.match.prob = c(cnt.match.prob, cnt.match / (nrow(sel)-1))
       
       if (nrow(sel) > 1) {
         selected = as.data.frame(sel[-1, , drop = FALSE]) 

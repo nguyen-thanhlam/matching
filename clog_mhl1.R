@@ -26,7 +26,7 @@ for (iparams in c(1:nrow(params))) {
     for (k in 1:n.cova) name = c(name,paste0("c", k))
     name = name[-1]
     
-    for ( z in split(c(1:nsim), ceiling(seq_along(c(1:nsim))/ceiling(nsim/nworkers)))[[iphase]] ) {
+    for ( z in split(c(1:nsim), cut(c(1:nsim), breaks = nworkers, labels = FALSE))[[iphase]] ) {
       set.seed(z)
 
       n = ifelse(event.prop == 0.01, 20000*n.pair/200, 10000*n.pair/200)

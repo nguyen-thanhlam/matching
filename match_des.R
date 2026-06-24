@@ -17,26 +17,29 @@ col = c('strategy',
         'clog_upper')
 # Ensure data is available
 beta = log(1.5)
-resa1 = read.csv("res_pw_checkvar.csv")
+resa1 = read.csv("res_pw_checkvar_2500.csv")
+resa2 = read.csv("match_resA1_pw.csv")
+resa3 = read.csv("match_resA2_pw.csv")
 # Convert to data frame if needed
-res = resa1
-#res <- rbind(resa1[,c(col)],resa2[,c(col)])
+#res = resa1
+res <- rbind(resa1[,c(col)],resa2[,c(col)],resa3[,c(col)])
 
 #res <- read.csv("match_res_pw.csv")
 # Treat variables as categorical
+res$n.case = ifelse(res$event.prob == 0.01, res$n*200/20000, res$n*200/10000)
 res$strategy <- factor(res$strategy, levels = c("matching", "counter-matching"), labels = c("m", "cm"))
 res$algo <- factor(res$algo, levels = c("A1", "A2"), labels = c("A1", "A2"))
 res$approach <- factor(res$approach)
-#res$n.cova <- factor(res$n.cova)
-res$n.cova <- factor(res$n)
+res$n.cova <- factor(res$n.cova)
+res$n.case <- factor(res$n.case)
 res$event.prob <- factor(res$event.prob)
 res$ttm.prob <- factor(res$ttm.prob)
 
 # Combine strategy and approach for plotting, and order for bars
 
 # Order for bars: m-drs, cm-drs, m-ps, cm-ps, m-mhl, cm-mhl
-approach_levels <- c("ex", "drs", "ps", "mhl")
-strat_app_levels <- c("m-ex", "cm-ex", "m-drs", "cm-drs", "m-ps", "cm-ps", "m-mhl", "cm-mhl")
+approach_levels <- c("drs", "ps", "mhl")
+strat_app_levels <- c("m-drs", "cm-drs", "m-ps", "cm-ps", "m-mhl", "cm-mhl")
 res$strat_app <- factor(paste0(res$strategy, "-", res$approach), levels = strat_app_levels)
 
 # Function to calculate type 1 error with confidence interval
@@ -81,17 +84,17 @@ calc_coverage <- function(data, beta) {
 
 # Summarize for type 1 error (MH)
 type1_mh_df <- res %>%
-  dplyr::group_by(strat_app, algo, n.cova, event.prob, ttm.prob) %>%
+  dplyr::group_by(strat_app, n.case, algo, n.cova, event.prob, ttm.prob) %>%
   dplyr::summarise(calc_type1_error(mh_pval), .groups = 'drop')
 
 # Summarize for type 1 error (clogit)
 type1_clog_df <- res %>%
-  dplyr::group_by(strat_app, algo, n.cova, event.prob, ttm.prob) %>%
+  dplyr::group_by(strat_app, n.case, algo, n.cova, event.prob, ttm.prob) %>%
   dplyr::summarise(calc_type1_error(clog_pval), .groups = 'drop')
 
 # Summarize for coverage
 coverage_df <- res %>%
-  dplyr::group_by(strat_app, algo, n.cova, event.prob, ttm.prob) %>%
+  dplyr::group_by(strat_app, n.case, algo, n.cova, event.prob, ttm.prob) %>%
   dplyr::summarise(calc_coverage(cur_data(),beta=beta), .groups = 'drop')
 
 # Prepare for coefficient distribution

@@ -151,8 +151,8 @@ worker <- function(task) {
     env$drs_res <- c()
     env$ps_res <- c()
 
-    for (script in c("clog_mhl1.R", "clog_ps1.R", "clog_drs1.R")) { #"clog_ex.R",
-        source(paste0("/work/ttkle/matching/",script), local = env) #
+    for (script in c("clog_mhl1.R","clog_drs1.R", "clog_ps1.R")) { #"clog_ex.R",
+        source(paste0("/work/ttkle/matching/",script), local = env) #"/work/ttkle/matching/",
     }
     list(#ex = env$ex_res,
         mhl = env$mhl_res,
@@ -176,4 +176,4 @@ stopCluster(cl)
 
 nms <- unique(unlist(lapply(results, names)))
 res <- do.call(rbind, lapply(nms, function(nm) {do.call(rbind, lapply(results, `[[`, nm))}))
-write.csv(res, paste0("/work/ttkle/matching/res_pw_checkvar.csv"))
+write.csv(res, paste0("/work/ttkle/matching/res_pw_checkvar.csv")) 
