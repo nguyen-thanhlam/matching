@@ -141,12 +141,10 @@ for (iparams in c(1:nrow(params))) {
       event.prob = event.prop,
       ttm.prob  = ttm.prop,
       r.penalty = r.penalty,
-      seed = split(c(1:nsim), ceiling(seq_along(c(1:nsim))/ceiling(nsim/nworkers)))[[iphase]],
+      seed = split(c(1:nsim), cut(c(1:nsim), breaks = nworkers, labels = FALSE))[[iphase]],
       mh_pval   = pvalue.match,
       clog_coef = clog_coef,
       clog_pval = clog_pval,
       clog_lower = clog_ci[,1],
       clog_upper = clog_ci[,2])))
 }  
-
-
