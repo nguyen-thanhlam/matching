@@ -7,10 +7,10 @@ px.str = 3
 hr.ttm = 1.5
 strategy = c("matching", "counter-matching")
 algo_list = c('A1', 'A2')
-n.pair.list = c(200,500)
+n.pair.list = c(200)
 ttm.prop.list = c(0.1, 0.5)
 event.prop.list = c(0.01, 0.05, 0.10)
-n.cova.list = c(2, 4, 10, 20)
+n.cova.list = c(2)
 #r.penalty.list = c(0.5, 1, 5, 10)
 r.penalty.list = c(1)
 params <- expand.grid(strat = strategy,
@@ -35,8 +35,8 @@ sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5,
     name <- NA
     ####################### test binary ##########################################
     for (k in 1:n.cova) { 
-        #cova[, k] <- rbinom(n, 1, 0.3)
-        cova[, k] <- runif(n, -0.5, 0.5)
+        cova[, k] <- rbinom(n, 1, 0.3)
+        #cova[, k] <- runif(n, -0.5, 0.5)
         name <- c(name, paste0("c", k))
     }
     colnames(cova) <- name[-1]

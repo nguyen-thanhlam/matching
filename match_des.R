@@ -16,15 +16,21 @@ col = c('strategy',
         'clog_lower',
         'clog_upper')
 # Ensure data is available
-beta = log(1.5)
-resa1 = read.csv("res_pw_checkvar_2500.csv")
-resa2 = read.csv("match_resA1_pw.csv")
-resa3 = read.csv("match_resA2_pw.csv")
-# Convert to data frame if needed
-#res = resa1
-res <- rbind(resa1[,c(col)],resa2[,c(col)],resa3[,c(col)])
 
-#res <- read.csv("match_res_pw.csv")
+#beta = log(1.5)
+#resa1 = read.csv("res_pw_checkvar_mhl.csv")
+#resa2 = read.csv("res_pw_checkvar_ps.csv")
+#resa3 = read.csv("res_pw_checkvar_drs.csv")
+#resa4 = read.csv("match_resA1_pw.csv")
+#resa5 = read.csv("match_resA2_pw.csv")
+#res <- rbind(resa1[,c(col)],resa2[,c(col)],resa3[,c(col)],resa4[,c(col)],resa5[,c(col)])
+
+
+#beta = 0
+#resa1 = read.csv("match_resA1.csv")
+#resa2 = read.csv("match_resA2.csv")
+#res <- rbind(resa1[,c(col)],resa2[,c(col)])
+
 # Treat variables as categorical
 res$n.case = ifelse(res$event.prob == 0.01, res$n*200/20000, res$n*200/10000)
 res$strategy <- factor(res$strategy, levels = c("matching", "counter-matching"), labels = c("m", "cm"))
@@ -34,7 +40,10 @@ res$n.cova <- factor(res$n.cova)
 res$n.case <- factor(res$n.case)
 res$event.prob <- factor(res$event.prob)
 res$ttm.prob <- factor(res$ttm.prob)
-
+if (beta!=0) {
+  res = res[res$n.case==200,]
+}
+#
 # Combine strategy and approach for plotting, and order for bars
 
 # Order for bars: m-drs, cm-drs, m-ps, cm-ps, m-mhl, cm-mhl
@@ -109,32 +118,41 @@ ttm_labeller <- function(x) {
   c("0.1" = "Treatment probability 0.1",
     "0.5" = "Treatment probability 0.5")[x]
 }
-colors = c("#6A0DAD","#C8A2C8","#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")
+#colors = c("#6A0DAD","#C8A2C8","#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")
+colors = c("#1B5E20", "#66BB6A", "#B71C1C", "#EF5350", "#0D47A1", "#42A5F5")
 # Plot 1: Type 1 Error (MH p-value) with fixed 95% reference band and 5% line
 plot_type1_mh <- ggplot(type1_mh_df, aes(x = event.prob, y = prop, fill = strat_app)) +
-  #annotate("rect", xmin = -Inf, xmax = Inf, ymin = 0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), ymax = 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), alpha = 0.15, fill = "grey") +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9), alpha = 0.9, width = 0.8) +
-  geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1])), linetype = "dashed", color = "grey40") +
-  geom_hline(yintercept = 0.05, linetype = "dashed", color = "red", size = 0.5) +
+  #geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1])), linetype = "dashed", color = "grey40") +
+  geom_hline(yintercept = ifelse(beta==0,0.05,0.80), linetype = "dashed", color = "red", size = 0.5) +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
   scale_fill_manual(values = colors) +
-  labs(title = "Type 1 Error (MH p-value)", x = "Event Probability", y = "Proportion p < 0.05", fill = "Approach") +
-  theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95"))
-
-
-
+  labs(title = ifelse(beta==0,"Type 1 error (CMH test)","Statistical power (CMH test)"), x = "Event probability", y = "Proportion p < 0.05", fill = "Approach") +
+  theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95")) 
+if (beta==0) {
+  plot_type1_mh = plot_type1_mh +
+    geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1])), linetype = "dashed", color = "grey40")
+} else {
+  plot_type1_mh = plot_type1_mh + 
+    coord_cartesian(ylim = c(0, 1))
+}
 
 # Plot 2: Type 1 Error (Clogit p-value) with fixed 95% reference band and 5% line
 plot_type1_clog <- ggplot(type1_clog_df, aes(x = event.prob, y = prop, fill = strat_app)) +
-  #annotate("rect", xmin = -Inf, xmax = Inf, ymin = 0.05 - 1.96*sqrt(0.05*0.95/unique(type1_clog_df$n)[1]), ymax = 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_clog_df$n)[1]), alpha = 0.15, fill = "grey") +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9), alpha = 0.9, width = 0.8) +
-  geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1])), linetype = "dashed", color = "grey40") +
-  geom_hline(yintercept = 0.05, linetype = "dashed", color = "red", size = 0.5) +
+  #geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_mh_df$n)[1])), linetype = "dashed", color = "grey40") +
+  geom_hline(yintercept = ifelse(beta==0,0.05,0.80), linetype = "dashed", color = "red", size = 0.5) +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
   scale_fill_manual(values = colors) +
-  labs(title = "Type 1 Error (Clogit p-value)", x = "Event Probability", y = "Proportion p < 0.05", fill = "Approach") +
+  labs(title = ifelse(beta==0,"Type 1 error (Clogit test)","Statistical power (Clogit test)"), x = "Event Probability", y = "Proportion p < 0.05", fill = "Approach") +
   theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95"))
-
+if (beta==0) {
+  plot_type1_clog = plot_type1_clog +
+    geom_hline(yintercept = c(0.05 - 1.96*sqrt(0.05*0.95/unique(type1_clog_df$n)[1]), 0.05 + 1.96*sqrt(0.05*0.95/unique(type1_clog_df$n)[1])), linetype = "dashed", color = "grey40")
+} else {
+  plot_type1_clog = plot_type1_clog + 
+    coord_cartesian(ylim = c(0, 1))
+}
 
 
 # Plot 3: Distribution of clog_coef (boxplot)
@@ -151,21 +169,18 @@ plot_coef_dist <- ggplot(coef_all, aes(x = event.prob, y = clog_coef, fill = str
 # Plot 4: Coverage (bar)
 plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_app)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9), alpha = 0.9, width = 0.8) +
-  #geom_errorbar(aes(ymin = lower, ymax = upper), position = position_dodge(width = 0.9), width = 0.2) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "red", size = 0.5) +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
   scale_fill_manual(values = colors) +
   labs(title = "Coverage (95% CI includes true parameter)", x = "Event Probability", y = "Coverage Proportion", fill = "Approach") +
   theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95")) +
-  coord_cartesian(ylim = c(0, 1))
+  coord_cartesian(ylim = c(0.8, 1.0))
   #scale_y_continuous(limits = c(0.5, 1.1), breaks = seq(0.5, 1.1, 0.05))
-
-
 # ============================================================================
 # Save plots
 # ============================================================================
 # Save as PDF with multiple pages
-pdf("des/plot_results.pdf", width = 12, height = 8)
+pdf("des/plot_test.pdf", width = 12, height = 8)
 
 print(plot_type1_mh)
 print(plot_type1_clog)
@@ -175,10 +190,10 @@ print(plot_coverage)
 dev.off()
 
 # Also save as individual PNG files
-ggsave("des/plot_type1_mh.png", plot_type1_mh, width = 12, height = 8, dpi = 300)
-ggsave("des/plot_type1_clog.png", plot_type1_clog, width = 12, height = 8, dpi = 300)
-ggsave("des/plot_coef_dist.png", plot_coef_dist, width = 14, height = 10, dpi = 300)
-ggsave("des/plot_coverage.png", plot_coverage, width = 12, height = 8, dpi = 300)
+#ggsave("des/plot_type1_mh.png", plot_type1_mh, width = 12, height = 8, dpi = 300)
+#ggsave("des/plot_type1_clog.png", plot_type1_clog, width = 12, height = 8, dpi = 300)
+#ggsave("des/plot_coef_dist.png", plot_coef_dist, width = 14, height = 10, dpi = 300)
+#ggsave("des/plot_coverage.png", plot_coverage, width = 12, height = 8, dpi = 300)
 
 # Print summary statistics
 cat("\n=== Summary Statistics ===\n")
