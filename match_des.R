@@ -16,32 +16,15 @@ col = c('strategy',
         'clog_lower',
         'clog_upper')
 # Ensure data is available
-
-
 beta = 0
 resa1 = read.csv("match_resA1.csv")
 resa2 = read.csv("match_resA2.csv")
 res <- rbind(resa1[,c(col)],resa2[,c(col)])
 
-
 beta = log(1.5)
-resa1 = read.csv("match_resA1_pw.csv")
-resa2 = read.csv("match_resA2_pw.csv")
-res <- rbind(resa1[,c(col)],resa2[,c(col)])
-
-beta = log(1.5)
-resa1 = read.csv("res_pw_checkvar_mhl.csv")
-resa2 = read.csv("res_pw_checkvar_ps.csv")
-resa3 = read.csv("res_pw_checkvar_drs.csv")
 resa4 = read.csv("match_resA1_pw.csv")
 resa5 = read.csv("match_resA2_pw.csv")
 res <- rbind(resa1[,c(col)],resa2[,c(col)],resa3[,c(col)],resa4[,c(col)],resa5[,c(col)])
-
-beta = log(1.5)
-resa1 = read.csv("match_resA1_pw.csv")
-resa2 = read.csv("match_resA2_pw.csv")
-res <- rbind(resa1[,c(col)],resa2[,c(col)])
-res = res[res$seed<=100,]
 # Treat variables as categorical
 res$n.case = NA
 res$n.case[res$event.prob == 0.01 | res$event.prob == 1] = res$n[res$event.prob == 0.01 | res$event.prob == 1]*200/20000
@@ -195,7 +178,7 @@ plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_
 # Save plots
 # ============================================================================
 # Save as PDF with multiple pages
-pdf("des/plot_typ2_200_seed100.pdf", width = 12, height = 8)
+pdf("des/plot_typ1_500case.pdf", width = 12, height = 8)
 
 print(plot_type1_mh)
 print(plot_type1_clog)

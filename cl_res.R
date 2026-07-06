@@ -1,17 +1,16 @@
 library(parallel)
 
 # Simulation parameters
-nsim = 100
+nsim = 1000
 n = 20000
 px.str = 3
-hr.ttm = 1.5
+hr.ttm = 1
 strategy = c("matching", "counter-matching")
-algo_list = c('A1', 'A2')
-n.pair.list = c(200)
+algo_list = c('A1')
+n.pair.list = c(500)
 ttm.prop.list = c(0.1, 0.5)
 event.prop.list = c(0.01, 0.05, 0.10)
-n.cova.list = c(2)
-#r.penalty.list = c(0.5, 1, 5, 10)
+n.cova.list = c(4, 10, 20)
 r.penalty.list = c(1)
 params <- expand.grid(strat = strategy,
                     algo = algo_list,
@@ -23,8 +22,6 @@ params <- expand.grid(strat = strategy,
                     KEEP.OUT.ATTRS = FALSE,
                     stringsAsFactors = FALSE)
 params$r.penalty[params$strat=='matching'] = NA
-params = params[!(params$n.cova>2 & params$n.pair==200), ]
-
 params = unique(params)
 
 sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5, 
@@ -176,4 +173,4 @@ stopCluster(cl)
 
 nms <- unique(unlist(lapply(results, names)))
 res <- do.call(rbind, lapply(nms, function(nm) {do.call(rbind, lapply(results, `[[`, nm))}))
-write.csv(res, paste0("/work/ttkle/matching/res_pw_checkvar.csv")) 
+write.csv(res, paste0("/work/ttkle/matching/match_resA1_500.csv")) 
