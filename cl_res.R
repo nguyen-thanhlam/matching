@@ -35,8 +35,8 @@ sim <- function(n = 1e6, a = 2, med0 = 200, hr.ttm = 1, hr.c = 1.5,
     name <- NA
     ####################### test binary ##########################################
     for (k in 1:n.cova) { 
-        cova[, k] <- rbinom(n, 1, 0.3)
-        #cova[, k] <- runif(n, -0.5, 0.5)
+        #cova[, k] <- rbinom(n, 1, 0.3)
+        cova[, k] <- runif(n, -0.5, 0.5)
         name <- c(name, paste0("c", k))
     }
     colnames(cova) <- name[-1]

@@ -17,22 +17,35 @@ col = c('strategy',
         'clog_upper')
 # Ensure data is available
 
-#beta = log(1.5)
-#resa1 = read.csv("res_pw_checkvar_mhl.csv")
-#resa2 = read.csv("res_pw_checkvar_ps.csv")
-#resa3 = read.csv("res_pw_checkvar_drs.csv")
-#resa4 = read.csv("match_resA1_pw.csv")
-#resa5 = read.csv("match_resA2_pw.csv")
-#res <- rbind(resa1[,c(col)],resa2[,c(col)],resa3[,c(col)],resa4[,c(col)],resa5[,c(col)])
+
+beta = 0
+resa1 = read.csv("match_resA1.csv")
+resa2 = read.csv("match_resA2.csv")
+res <- rbind(resa1[,c(col)],resa2[,c(col)])
 
 
-#beta = 0
-#resa1 = read.csv("match_resA1.csv")
-#resa2 = read.csv("match_resA2.csv")
-#res <- rbind(resa1[,c(col)],resa2[,c(col)])
+beta = log(1.5)
+resa1 = read.csv("match_resA1_pw.csv")
+resa2 = read.csv("match_resA2_pw.csv")
+res <- rbind(resa1[,c(col)],resa2[,c(col)])
 
+beta = log(1.5)
+resa1 = read.csv("res_pw_checkvar_mhl.csv")
+resa2 = read.csv("res_pw_checkvar_ps.csv")
+resa3 = read.csv("res_pw_checkvar_drs.csv")
+resa4 = read.csv("match_resA1_pw.csv")
+resa5 = read.csv("match_resA2_pw.csv")
+res <- rbind(resa1[,c(col)],resa2[,c(col)],resa3[,c(col)],resa4[,c(col)],resa5[,c(col)])
+
+beta = log(1.5)
+resa1 = read.csv("match_resA1_pw.csv")
+resa2 = read.csv("match_resA2_pw.csv")
+res <- rbind(resa1[,c(col)],resa2[,c(col)])
+res = res[res$seed<=100,]
 # Treat variables as categorical
-res$n.case = ifelse(res$event.prob == 0.01, res$n*200/20000, res$n*200/10000)
+res$n.case = NA
+res$n.case[res$event.prob == 0.01 | res$event.prob == 1] = res$n[res$event.prob == 0.01 | res$event.prob == 1]*200/20000
+res$n.case[res$event.prob != 0.01 & res$event.prob != 1] = res$n[res$event.prob != 0.01 & res$event.prob != 1]*200/10000
 res$strategy <- factor(res$strategy, levels = c("matching", "counter-matching"), labels = c("m", "cm"))
 res$algo <- factor(res$algo, levels = c("A1", "A2"), labels = c("A1", "A2"))
 res$approach <- factor(res$approach)
@@ -40,6 +53,8 @@ res$n.cova <- factor(res$n.cova)
 res$n.case <- factor(res$n.case)
 res$event.prob <- factor(res$event.prob)
 res$ttm.prob <- factor(res$ttm.prob)
+
+print(unique(res$n.case))
 if (beta!=0) {
   res = res[res$n.case==200,]
 }
@@ -70,7 +85,6 @@ calc_type1_error <- function(data, alpha = 0.05) {
     n = n_total
   ))
 }
-
 
 # Function to calculate coverage (proportion of true value 0 between lower and upper)
 calc_coverage <- function(data, beta) {
@@ -170,6 +184,7 @@ plot_coef_dist <- ggplot(coef_all, aes(x = event.prob, y = clog_coef, fill = str
 plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_app)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9), alpha = 0.9, width = 0.8) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "red", size = 0.5) +
+  geom_hline(yintercept = c(0.95 - 1.96*sqrt(0.05*0.95/unique(coverage_df$n)[1]), 0.95 + 1.96*sqrt(0.05*0.95/unique(coverage_df$n)[1])), linetype = "dashed", color = "grey40") +
   facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller, .default = label_value), switch = "y") +
   scale_fill_manual(values = colors) +
   labs(title = "Coverage (95% CI includes true parameter)", x = "Event Probability", y = "Coverage Proportion", fill = "Approach") +
@@ -180,7 +195,7 @@ plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_
 # Save plots
 # ============================================================================
 # Save as PDF with multiple pages
-pdf("des/plot_test.pdf", width = 12, height = 8)
+pdf("des/plot_typ2_200_seed100.pdf", width = 12, height = 8)
 
 print(plot_type1_mh)
 print(plot_type1_clog)
