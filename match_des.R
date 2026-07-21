@@ -20,7 +20,7 @@ beta = 0
 resa1 = read.csv("match_resA1.csv")
 resa2 = read.csv("match_resA2.csv")
 res <- rbind(resa1[,c(col)],resa2[,c(col)])
-
+resa1 = read.csv("test/res_pw_checkvar_ps.csv")
 beta = log(1.5)
 resa4 = read.csv("match_resA1_pw.csv")
 resa5 = read.csv("match_resA2_pw.csv")
