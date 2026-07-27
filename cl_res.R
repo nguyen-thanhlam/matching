@@ -4,9 +4,9 @@ library(parallel)
 nsim = 1000
 n = 20000
 px.str = 3
-hr.ttm = 1
+hr.ttm = 1.5
 strategy = c("matching", "counter-matching")
-algo_list = c('A1')
+algo_list = c('A2')
 n.pair.list = c(500)
 ttm.prop.list = c(0.1, 0.5)
 event.prop.list = c(0.01, 0.05, 0.10)
@@ -173,4 +173,4 @@ stopCluster(cl)
 
 nms <- unique(unlist(lapply(results, names)))
 res <- do.call(rbind, lapply(nms, function(nm) {do.call(rbind, lapply(results, `[[`, nm))}))
-write.csv(res, paste0("/work/ttkle/matching/match_resA1_500.csv")) 
+write.csv(res, paste0("/work/ttkle/matching/match_resA2_500_pw.csv")) 
