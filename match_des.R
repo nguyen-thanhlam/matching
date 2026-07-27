@@ -1,6 +1,7 @@
 library(ggplot2)
 library(gridExtra)
 library(dplyr)
+library(ggridges)
 
 col = c('strategy',
         'algo',
@@ -20,11 +21,14 @@ beta = 0
 resa1 = read.csv("match_resA1.csv")
 resa2 = read.csv("match_resA2.csv")
 res <- rbind(resa1[,c(col)],resa2[,c(col)])
-resa1 = read.csv("test/res_pw_checkvar_ps.csv")
-beta = log(1.5)
-resa4 = read.csv("match_resA1_pw.csv")
-resa5 = read.csv("match_resA2_pw.csv")
-res <- rbind(resa1[,c(col)],resa2[,c(col)],resa3[,c(col)],resa4[,c(col)],resa5[,c(col)])
+#beta = log(1.5)
+#resa4 = read.csv("match_resA1_pw.csv")
+#resa5 = read.csv("match_resA2_pw.csv")
+#res <- rbind(resa4[,c(col)],resa5[,c(col)])
+
+#beta = 0
+#resa1 = read.csv("res1000.csv")
+#res <- rbind(resa1[,c(col)])
 # Treat variables as categorical
 res$n.case = NA
 res$n.case[res$event.prob == 0.01 | res$event.prob == 1] = res$n[res$event.prob == 0.01 | res$event.prob == 1]*200/20000
@@ -162,7 +166,17 @@ plot_coef_dist <- ggplot(coef_all, aes(x = event.prob, y = clog_coef, fill = str
   theme_bw() + theme(axis.text.x = element_text(angle = 0, hjust = 0.5), strip.background = element_rect(fill = "grey95")) +
   coord_cartesian(ylim = c(-3, 3))
 
+plot_clogit_pval_dist <- ggplot(coef_all, aes(x = clog_pval, y = factor(event.prob), color = strat_app)) + 
+      geom_density_ridges(fill = NA, linewidth = 1, alpha = 0.8, scale = 0.5) +
+      facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller,.default = label_value),switch = "y") +
+      scale_color_manual(values = colors) + 
+      labs(title = "Distribution of Clogit p-values", x = "P-value", y = "Event Probability", fill = "Approach") + theme_bw()
 
+plot_mh_pval_dist <- ggplot(coef_all, aes(x = mh_pval, y = factor(event.prob), color = strat_app)) + 
+      geom_density_ridges(fill = NA, linewidth = 1, alpha = 0.8, scale = 0.5) +
+      facet_grid(n.cova ~ algo + ttm.prob, labeller = labeller(algo = algo_labeller, ttm.prob = ttm_labeller,.default = label_value),switch = "y") +
+      scale_color_manual(values = colors) + 
+      labs(title = "Distribution of MH p-values", x = "P-value", y = "Event Probability", fill = "Approach") + theme_bw()
 # Plot 4: Coverage (bar)
 plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_app)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9), alpha = 0.9, width = 0.8) +
@@ -178,11 +192,13 @@ plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_
 # Save plots
 # ============================================================================
 # Save as PDF with multiple pages
-pdf("des/plot_typ1_500case.pdf", width = 12, height = 8)
+pdf("des/plot_typ1_200.pdf", width = 12, height = 8)
 
 print(plot_type1_mh)
 print(plot_type1_clog)
 print(plot_coef_dist)
+print(plot_mh_pval_dist)
+print(plot_clogit_pval_dist)
 print(plot_coverage)
 
 dev.off()
