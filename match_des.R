@@ -17,15 +17,14 @@ col = c('strategy',
         'clog_lower',
         'clog_upper')
 # Ensure data is available
-beta = 0
-resa1 = read.csv("match_resA1.csv")
-resa2 = read.csv("match_resA2.csv")
+beta = log(1.5)
+resa1 = read.csv("match_resA1_pw.csv")
+resa2 = read.csv("match_resA2_pw.csv")
 res <- rbind(resa1[,c(col)],resa2[,c(col)])
 #beta = log(1.5)
 #resa4 = read.csv("match_resA1_pw.csv")
 #resa5 = read.csv("match_resA2_pw.csv")
 #res <- rbind(resa4[,c(col)],resa5[,c(col)])
-
 #beta = 0
 #resa1 = read.csv("res1000.csv")
 #res <- rbind(resa1[,c(col)])
@@ -42,9 +41,9 @@ res$event.prob <- factor(res$event.prob)
 res$ttm.prob <- factor(res$ttm.prob)
 
 print(unique(res$n.case))
-if (beta!=0) {
-  res = res[res$n.case==200,]
-}
+#if (beta!=0) {
+#  res = res[res$n.case==200,]
+#}
 #
 # Combine strategy and approach for plotting, and order for bars
 
@@ -192,7 +191,7 @@ plot_coverage <- ggplot(coverage_df, aes(x = event.prob, y = prop, fill = strat_
 # Save plots
 # ============================================================================
 # Save as PDF with multiple pages
-pdf("des/plot_typ1_200.pdf", width = 12, height = 8)
+pdf("des/plot_typ2_200.pdf", width = 12, height = 8)
 
 print(plot_type1_mh)
 print(plot_type1_clog)

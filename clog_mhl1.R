@@ -62,14 +62,15 @@ for (iparams in c(1:nrow(params))) {
         X_case <- d[1, name, drop = FALSE]
         X_ctrl <- d[-1, name, drop = FALSE]        
         if (nrow(X_ctrl) < 2) next
-        cov_ctrl <- cov(X_ctrl)        
+        cov_ctrl <- cov(X_ctrl)
         # Check if covariance is singular, use generalized inverse if needed
-        if (rcond(cov_ctrl) < 1e-10) {
-          cov_ctrl_inv <- MASS::ginv(cov_ctrl)
-          dist_vector <- mahalanobis(x = as.matrix(X_ctrl), 
-                                      center = as.numeric(X_case), 
-                                      cov = cov_ctrl_inv,
-                                      inverted = TRUE)
+        if (rcond(cov_ctrl) < 10e-6) {
+          next
+          #cov_ctrl_inv <- MASS::ginv(cov_ctrl)
+          #dist_vector <- mahalanobis(x = as.matrix(X_ctrl), 
+          #                            center = as.numeric(X_case), 
+          #                            cov = cov_ctrl_inv,
+          #                            inverted = TRUE)
         } else {
           dist_vector <- mahalanobis(x = as.matrix(X_ctrl), 
                                       center = as.numeric(X_case), 
@@ -90,7 +91,8 @@ for (iparams in c(1:nrow(params))) {
           } else {
             dist_list1 <- addrevcaliper(dist = dist_list, z = d$case, 
                                         dx = d$px, rg = c(-0.5, 0.5), 
-                                        stdev = TRUE, penalty = max(dist_list$d), r.penalty=r.penalty)
+                                        stdev = TRUE, penalty = max(dist_list$d),
+                                        r.penalty=r.penalty)
           }
         }
         o1 <- DiPs::match(z = d$case, dist = dist_list1, dat = d, ncontrol = 1)
